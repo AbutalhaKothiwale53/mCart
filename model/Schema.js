@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
-const DB_URI = "mongodb://127.0.0.1:27017/mCart_DB";
+const DB_URI = "mongodb+srv://talhakothiwale:DBPASSWORD@t-cluster0.tslsnfq.mongodb.net/mCart_DB";
+
 
 mongoose
   .connect(DB_URI, {
