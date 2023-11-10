@@ -17,16 +17,17 @@ exports.signup = async (req, res) => {
         message: validationError.message,
       });
     }
-    const existingUser = await Schema.userModel.findOne({ username });
+    const existingUser = await Schema.userModel.findOne({ username }).maxTimeMS(30000);
     if (existingUser) {
       return res.status(400).json({
         message: "User already registered",
       });
     }
-    if (password.length < 5) {
-      return res
-        .status(400)
-        .json({ message: "Minimum 5 characters should be there in password" });
+    // Check if the password contains any special characters or is less than 5 characters
+    if (!/^[a-zA-Z0-9]+$/.test(password) || password.length < 5) {
+      return res.status(400).json({
+        message: "Invalid password format or minimum 5 characters required",
+      });
     }
 
     if (phoneNumber.toString().length !== 10) {
@@ -214,36 +215,36 @@ exports.getUserCartDetails = async (req, res) => {
   }
 };
 exports.addProductsToCart = async (req, res) => {
-  try{
-    const {username, productsInCart} = req.body;
+  try {
+    const { username, productsInCart } = req.body;
     // const products = productsInCart.map((item) => ({
     //   productId: item.productId,
     //   productName: item.productName,
     //   quantity: item.quantity,
     // }));
     const counter = await Schema.CounterModel.findByIdAndUpdate(
-      'cartID',
-      { $inc: {sequence_value: 1}},
-      { new: true, upsert: true}
+      "cartID",
+      { $inc: { sequence_value: 1 } },
+      { new: true, upsert: true }
     );
     const newCart = new Schema.CartModel({
       cartID: counter.sequence_value,
       username: username,
       productsInCart: productsInCart,
-      statusOfCart: 'Open',
+      statusOfCart: "Open",
     });
     await newCart.save();
-    if(newCart != 0){
+    if (newCart != 0) {
       res.status(201).json({
-        status: 'Success',
+        status: "Success",
         message: `New items got inserted into the cart with the ID : ${newCart.cartID}`,
         newCart,
-      })
-    }else{
+      });
+    } else {
       res.status(404).json({
-        status: 'fail',
-        message: "User's cart is already available, append to the same cart"
-      })
+        status: "fail",
+        message: "User's cart is already available, append to the same cart",
+      });
     }
   } catch (err) {
     console.log(err);
@@ -253,25 +254,25 @@ exports.addProductsToCart = async (req, res) => {
   }
 };
 exports.updateCartByUser = async (req, res) => {
-  try{
+  try {
     const updateCart = await Schema.CartModel.findOneAndUpdate(
-      {username: req.params.username},
-      {$set:{productsInCart: req.body.updatedCart}},
-      {new: true, runValidators: true}
+      { username: req.params.username },
+      { $set: { productsInCart: req.body.updatedCart } },
+      { new: true, runValidators: true }
     );
-    if(updateCart != null){
+    if (updateCart != null) {
       res.status(200).json({
-        status: 'Success',
-      message: `cartID: ${updateCart.cartID} updated`,
-      updateCart,
-      })
-    }else{
+        status: "Success",
+        message: `cartID: ${updateCart.cartID} updated`,
+        updateCart,
+      });
+    } else {
       res.status(404).json({
-        status: 'fail',
-        message: `Users cart is not available`
+        status: "fail",
+        message: `Users cart is not available`,
       });
     }
-  }catch(err){
+  } catch (err) {
     res.status(500).json({
       message: "Internal server error",
     });
