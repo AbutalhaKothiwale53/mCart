@@ -1,5 +1,7 @@
 const mongoose = require("mongoose");
 const Schema = require("../model/Schema");
+const { json } = require("express");
+const bcrypt = require('bcrypt');
 
 exports.signup = async (req, res) => {
   try {
@@ -17,7 +19,9 @@ exports.signup = async (req, res) => {
         message: validationError.message,
       });
     }
-    const existingUser = await Schema.userModel.findOne({ username }).maxTimeMS(30000);
+    const existingUser = await Schema.userModel
+      .findOne({ username })
+      .maxTimeMS(30000);
     if (existingUser) {
       return res.status(400).json({
         message: "User already registered",
@@ -48,20 +52,38 @@ exports.signup = async (req, res) => {
 };
 
 exports.login = async (req, res) => {
-  const predefinedUser = {
-    username: "admin",
-    password: "admin",
-  };
+  // const predefinedUser = {
+  //   username: "admin",
+  //   password: "admin",
+  // };
   try {
-    const { username, password } = req.query;
-    // const users = await Schema.userModel.findOne({username, password})
-    if (
-      username === predefinedUser.username &&
-      password === predefinedUser.password
-    ) {
-      res.json(true);
-    } else {
-      res.json(false);
+    // const { username, password } = req.query;
+    // // const users = await Schema.userModel.findOne({username, password})
+    // if (
+    //   username === predefinedUser.username &&
+    //   password === predefinedUser.password
+    // ) {
+    //   res.json(true);
+    // } else {
+    //   res.json(false);
+    // }
+
+    const {username, password} = req.params;
+    const login = await Schema.userModel.find({
+      username,
+    });
+
+    if(login){  
+      res.status(200).json({
+        success: true,
+        message: "Login Success",
+        login,
+      });
+    }else{
+      res.status(404).json({
+        success: false,
+        message: "Invalid username and passowrd"
+      });
     }
   } catch (error) {
     console.log("Login error", error);
@@ -279,9 +301,55 @@ exports.updateCartByUser = async (req, res) => {
     console.log(err);
   }
 };
-// exports.order = async (req, res) => {
+exports.orderProduct = async (req, res) => {
+  try {
+    const { orderAmount } = req.body;
+    const { username } = req.params;
+    console.log("Oder Product Request: ", req.body);
+    if (!username || !orderAmount || isNaN(orderAmount) || orderAmount <= 0) {
+      return res.status(400).json({
+        message: "Invalid Username or Order Amount",
+      });
+    }
+    const user = await Schema.userModel.findOne({ username });
+    console.log("Found user: ", user);
+    if (!user) {
+      return res.status(404).json({
+        message: "User Not Found",
+      });
+    }
+    const cart = await Schema.CartModel.findOne({
+      username: user.username,
+      statusOfCart: "Open",
+    });
 
-// };
+    console.log("Found Cart: ", cart);
+    if (!cart) {
+      return res
+        .status(404)
+        .json({ message: "Open cart not found for the user" });
+    }
+    cart.statusOfCart = "Closed";
+    await cart.save();
+
+    const newOder = await Schema.orderModel.create({
+      orderAmount,
+      cartID: cart.cartID,
+      orderID,
+    });
+    return res.status(201).json({
+      message: "Order Places successfully",
+      orderId: newOrder._id,
+      cartID: cart.cartID,
+      status: cart.statusOfCart,
+    });
+  } catch (err) {
+    console.log("<orderProduct Error:>", err);
+    return res.status(500).json({
+      message: "Internal server error",
+    });
+  }
+};
 // exports.deleteProduct = async (req, res) => {
 
 // };

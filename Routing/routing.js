@@ -12,6 +12,7 @@ const {
   getUserCartDetails,
   addProductsToCart,
   updateCartByUser,
+  orderProduct,
 } = Handler;
 
 router.post("/signup", signup);
@@ -22,6 +23,7 @@ router.get("/mobiles", mobiles);
 router.get("/cart", cart);
 router.get("/cart/:username", getUserCartDetails);
 router.post("/cart", addProductsToCart);
-router.put("/cart/:username", updateCartByUser  )
+router.put("/cart/:username", updateCartByUser);
+router.post("/orders/:username", orderProduct);
 
 module.exports = router;
